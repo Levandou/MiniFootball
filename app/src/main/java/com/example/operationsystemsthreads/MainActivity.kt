@@ -32,15 +32,26 @@ class MainActivity : AppCompatActivity() {
         addToListPlayers()
         binding.frame.setOnTouchListener { view, motionEvent ->
             if (motionEvent.action == MotionEvent.ACTION_UP)
-                selected?.let {
-                    moveObjectToNewPosition(motionEvent.x - (it.width / 2), motionEvent.y - (it.height / 2), it, 1000f)
+                selected?.let { selectedBtn ->
+                    val x = motionEvent.x - (selectedBtn.width / 2)
+                    val y = motionEvent.y - (selectedBtn.height / 2)
+                    val maxDistance = sqrt(
+                        abs(x - (selectedBtn.x + selectedBtn.width / 2)).pow(2) +
+                                abs(y - (selectedBtn.y + selectedBtn.height / 2)).pow(2)
+                    )
+                    moveObjectToNewPosition(x, y, selectedBtn, maxDistance)
                 }
             true
         }
     }
 
     @SuppressLint("Recycle")
-    //maxDistance определякет максимальную дистанцую которую могут проанимровать
+    /**
+     * x - координата по x куда тапнули
+     * y - координата по y куда тапнули
+     * selectedBtn - выбранная вьюшка которая будет анимироваться
+     * maxDistance - определякет максимальную дистанцую которую могут проанимровать вьюшки
+     */
     private fun moveObjectToNewPosition(x: Float, y: Float, selectedBtn: FloatingActionButton, maxDistance: Float) {
         var objectForNewAnim: View? = null                    //тут будет храниться вью которая будет анимироваться(если будет при пересечении)
         val dataListNewMoving = mutableListOf<Float>()        //тут будут храниться центры x и y для объектов которые ударяются
@@ -87,8 +98,10 @@ class MainActivity : AppCompatActivity() {
                 //если остановилось из-за припятствия
                 if (abs(valueX) <= xLenght && abs(valueY) <= yLenght && maxDistance > sqrt(valueX.pow(2) + valueY.pow(2))) {
                     objectForNewAnim = i
-                    dataListNewMoving.add(cordX)
-                    dataListNewMoving.add(cordY)
+
+                    //в dataListNewMoving записываем нужные данные для перехода к методу  ricochet
+                    dataListNewMoving.add(cordX + objectForNewAnim.width / 2)
+                    dataListNewMoving.add(cordY + objectForNewAnim.height / 2)
                     dataListNewMoving.add(objectForNewAnim.x + objectForNewAnim.width / 2)
                     dataListNewMoving.add(objectForNewAnim.y + objectForNewAnim.height / 2)
                     dataListNewMoving.add(sqrt(valueX.pow(2) + valueY.pow(2)))
@@ -122,12 +135,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    @SuppressLint("Recycle")
     /**
      * remainsMaxDistance - остаток силы после прошлого соприкосновения
      * firstObj - координаты центра первого объекта(который ударяет)
      * secondObj - координаты центра второго объекта (по которому ударяют)
      */
-    @SuppressLint("Recycle")
     private fun ricochet(remainsMaxDistance: Float, firstObj: Pair<Float, Float>, secondObj: Pair<Float, Float>) {
         //получаем длинну по каждой координате
         val length = Pair(secondObj.first - firstObj.first, secondObj.second - firstObj.second)
@@ -148,11 +161,11 @@ class MainActivity : AppCompatActivity() {
 
         //добавить проверку входит ли в другой обьект
         while (remainsMaxDistance > sqrt(sumDistanceX.pow(2) + sumDistanceY.pow(2))) {
-            sumDistanceX = +steps.first
-            sumDistanceY = +steps.second
+            sumDistanceX += steps.first
+            sumDistanceY += steps.second
 
-            newX = +steps.first
-            newY = +steps.second
+            newX += steps.first
+            newY += steps.second
         }
 
         AnimatorSet().apply {
