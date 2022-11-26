@@ -5,18 +5,19 @@ import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.DisplayMetrics
 import android.view.MotionEvent
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.example.operationsystemsthreads.databinding.ActivityMainBinding
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.sqrt
 
+
 class MainActivity : AppCompatActivity() {
-    val listOfPlayers = mutableListOf<View>()
+    val listOfPlayers = mutableListOf<FootballObject>()
     var selected: FloatingActionButton? = null
     private lateinit var binding: ActivityMainBinding
 
@@ -28,6 +29,8 @@ class MainActivity : AppCompatActivity() {
 
         binding.fab1.setOnClickListener { changeStateOfButton(binding.fab1) }
         binding.fab2.setOnClickListener { changeStateOfButton(binding.fab2) }
+        binding.fab3.setOnClickListener { changeStateOfButton(binding.fab3) }
+
 
         addToListPlayers()
         binding.frame.setOnTouchListener { view, motionEvent ->
@@ -55,11 +58,14 @@ class MainActivity : AppCompatActivity() {
     private fun moveObjectToNewPosition(x: Float, y: Float, selectedBtn: FloatingActionButton, maxDistance: Float) {
         var objectForNewAnim: View? = null                    //тут будет храниться вью которая будет анимироваться(если будет при пересечении)
         val dataListNewMoving = mutableListOf<Float>()        //тут будут храниться центры x и y для объектов которые ударяются
-        var cordX = selectedBtn.x
-        var cordY = selectedBtn.y
+        var cordX: Float? = null
+        var cordY: Float? = null
 
         for (i in listOfPlayers)
-            if (i.id != selectedBtn.id) {
+            if (i.view.id != selectedBtn.id) {
+                var iCordX = selectedBtn.x
+                var iCordY = selectedBtn.y
+
                 val signX = if (selectedBtn.x > x) -1f else 1f   //знак x
                 val signY = if (selectedBtn.y > y) -1f else 1f   //знак y
                 val xLenght = abs(x - selectedBtn.x)          //определение расстояния между объектами по x
@@ -75,10 +81,10 @@ class MainActivity : AppCompatActivity() {
                 var valueY = 0f
 
                 //получение диапозона выбранного(перемещаемого объекта по x и y
-                var rangeX = cordX..cordX + selectedBtn.width
-                var rangeY = cordY..cordY + selectedBtn.height
+                var rangeX = iCordX..iCordX + selectedBtn.width
+                var rangeY = iCordY..iCordY + selectedBtn.height
 
-                while (((i.x !in rangeX && i.x + i.width !in rangeX) || (i.y !in rangeY && i.y + i.width !in rangeY))
+                while (((i.view.x !in rangeX && i.view.x + i.view.width !in rangeX) || (i.view.y !in rangeY && i.view.y + i.view.width !in rangeY))
                     && abs(valueX) < xLenght && abs(valueY) < yLenght
                     && maxDistance > sqrt(valueX.pow(2) + valueY.pow(2))
                 ) {
@@ -86,33 +92,44 @@ class MainActivity : AppCompatActivity() {
                     valueX += p.first
                     valueY += p.second
 
-                    cordX += p.first
-                    cordY += p.second
-                    rangeX = cordX..cordX + selectedBtn.width
-                    rangeY = cordY..cordY + selectedBtn.height
+                    iCordX += p.first
+                    iCordY += p.second
+                    rangeX = iCordX..iCordX + selectedBtn.width
+                    rangeY = iCordY..iCordY + selectedBtn.height
                 }
 
-                cordX -= p.first
-                cordY -= p.second
+                iCordX -= p.first
+                iCordY -= p.second
 
                 //если остановилось из-за припятствия
                 if (abs(valueX) <= xLenght && abs(valueY) <= yLenght && maxDistance > sqrt(valueX.pow(2) + valueY.pow(2))) {
-                    objectForNewAnim = i
+                    objectForNewAnim = i.view
 
                     //в dataListNewMoving записываем нужные данные для перехода к методу  ricochet
-                    dataListNewMoving.add(cordX + objectForNewAnim.width / 2)
-                    dataListNewMoving.add(cordY + objectForNewAnim.height / 2)
+                    dataListNewMoving.add(iCordX + objectForNewAnim.width / 2)
+                    dataListNewMoving.add(iCordY + objectForNewAnim.height / 2)
                     dataListNewMoving.add(objectForNewAnim.x + objectForNewAnim.width / 2)
                     dataListNewMoving.add(objectForNewAnim.y + objectForNewAnim.height / 2)
                     dataListNewMoving.add(sqrt(valueX.pow(2) + valueY.pow(2)))
                 }
-                break
+
+                if (cordX == null || cordY == null) {
+                    cordX = iCordX
+                    cordY = iCordY
+                }
+
+                if (getHypotenuse(cordX, cordY, selectedBtn.x + (selectedBtn.width / 2), selectedBtn.y + (selectedBtn.height / 2)) >
+                    getHypotenuse(valueX, valueY)
+                ) {
+                    cordX = iCordX
+                    cordY = iCordY
+                }
             }
 
-        val newX = ObjectAnimator.ofFloat(selectedBtn, "x", cordX)
-        val newY = ObjectAnimator.ofFloat(selectedBtn, "y", cordY)
-        newX.duration = 500
-        newY.duration = 500
+        val newX = cordX?.let { ObjectAnimator.ofFloat(selectedBtn, "x", it) }
+        val newY = cordY?.let { ObjectAnimator.ofFloat(selectedBtn, "y", it) }
+        newX?.duration = 500
+        newY?.duration = 500
         AnimatorSet().apply {
             this.addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) = Unit
@@ -159,22 +176,33 @@ class MainActivity : AppCompatActivity() {
         var newX = secondObj.first
         var newY = secondObj.second
 
+        val displayMetrics = DisplayMetrics()
+        windowManager.defaultDisplay.getMetrics(displayMetrics)
+        val height = displayMetrics.heightPixels
+        val width = displayMetrics.widthPixels
+
         //добавить проверку входит ли в другой обьект
-        while (remainsMaxDistance > sqrt(sumDistanceX.pow(2) + sumDistanceY.pow(2))) {
+        loop@ while (remainsMaxDistance > sqrt(sumDistanceX.pow(2) + sumDistanceY.pow(2))) {
             sumDistanceX += steps.first
             sumDistanceY += steps.second
 
             newX += steps.first
             newY += steps.second
+            if (newX < 0 || newY < 0 || newY + (selected?.height ?: 1) > height || newX + (selected?.width ?: 1) > width)
+                break@loop
         }
 
-        AnimatorSet().apply {
+       // val sumDistance = getHypotenuse(sumDistanceX, sumDistanceY)
+
+        selected?.let { moveObjectToNewPosition(newX, newY, it, remainsMaxDistance ) }
+
+    /*    AnimatorSet().apply {
             playTogether(
                 ObjectAnimator.ofFloat(selected, "x", newX).setDuration(500),
                 ObjectAnimator.ofFloat(selected, "y", newY).setDuration(500)
             )
             start()
-        }
+        }*/
     }
 
     private fun startAnimationNewObject(objectShouldMove: FloatingActionButton, intersectionX: Float, intersectionY: Float, maxDistance: Float) {
@@ -204,10 +232,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private operator fun Pair<Float, Float>.times(i: Int) = Pair(first * i.toFloat(), second * i.toFloat())
+
+    private fun getHypotenuse(firstX: Float, firstY: Float, secondX: Float, secondY: Float) =
+        getHypotenuse(abs(firstX - secondX), abs(firstY - secondY))
+
+    private fun getHypotenuse(first: Float, second: Float) =
+        sqrt(first.pow(2) + second.pow(2))
+
     private fun addToListPlayers() {
-        listOfPlayers.add(binding.fab1)
-        listOfPlayers.add(binding.fab2)
+        listOfPlayers.add(FootballObject(binding.fab1, 1))
+        listOfPlayers.add(FootballObject(binding.fab2, 1))
+        listOfPlayers.add(FootballObject(binding.fab3, 1))
     }
 }
 
-private operator fun Pair<Float, Float>.times(i: Int) = Pair(first * i.toFloat(), second * i.toFloat())
+data class FootballObject(
+    var view: FloatingActionButton,
+    var typeOfObject: Int
+)
