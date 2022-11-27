@@ -37,26 +37,32 @@
         android:id="@+id/fab5"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:backgroundTint="@color/red"
+        android:layout_marginTop="200dp"
         app:srcCompat="@android:drawable/ic_dialog_email" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab6"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:backgroundTint="@color/red"
         android:layout_gravity="center"
+        android:layout_marginTop="200dp"
         app:srcCompat="@android:drawable/ic_dialog_email" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab7"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:backgroundTint="@color/red"
         android:layout_gravity="right"
+        android:layout_marginTop="200dp"
         app:srcCompat="@android:drawable/ic_dialog_email" />
 
     <FrameLayout
         android:id="@+id/frame"
-        app:backgroundTint="@color/white"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        app:backgroundTint="@color/white" />
 
 </FrameLayout>

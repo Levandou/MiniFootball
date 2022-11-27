@@ -14,11 +14,19 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.math.abs
 import kotlin.math.pow
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 
 class MainActivity : AppCompatActivity() {
     val listOfPlayers = mutableListOf<FootballObject>()
     var selected: FloatingActionButton? = null
+
+    /**
+     *1 - синяя команда, 2 - красная команда
+     */
+    var teamMove = 1
+
+    //   var teamMove = (1..2).random()
     private lateinit var binding: ActivityMainBinding
 
     @SuppressLint("ClickableViewAccessibility")
@@ -27,10 +35,32 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.fab1.setOnClickListener { changeStateOfButton(binding.fab1) }
-        binding.fab2.setOnClickListener { changeStateOfButton(binding.fab2) }
-        binding.fab3.setOnClickListener { changeStateOfButton(binding.fab3) }
 
+        binding.fab1.setOnClickListener {
+            if (teamMove == 1)
+                changeStateOfButton(listOfPlayers[0].view)
+        }
+        binding.fab2.setOnClickListener {
+            if (teamMove == 1)
+                changeStateOfButton(listOfPlayers[1].view)
+        }
+        binding.fab3.setOnClickListener {
+            if (teamMove == 1)
+                changeStateOfButton(listOfPlayers[2].view)
+        }
+
+        binding.fab5.setOnClickListener {
+            if (teamMove == 2)
+                changeStateOfButton(listOfPlayers[4].view)
+        }
+        binding.fab6.setOnClickListener {
+            if (teamMove == 2)
+                changeStateOfButton(listOfPlayers[5].view)
+        }
+        binding.fab7.setOnClickListener {
+            if (teamMove == 2)
+                changeStateOfButton(listOfPlayers[6].view)
+        }
 
         addToListPlayers()
         binding.frame.setOnTouchListener { view, motionEvent ->
@@ -43,6 +73,8 @@ class MainActivity : AppCompatActivity() {
                                 abs(y - (selectedBtn.y + selectedBtn.height / 2)).pow(2)
                     )
                     moveObjectToNewPosition(x, y, selectedBtn, maxDistance)
+                    /*teamMove = if (teamMove == 1) 0 else 1
+                    selected = null*/
                 }
             true
         }
@@ -56,7 +88,7 @@ class MainActivity : AppCompatActivity() {
      * maxDistance - определякет максимальную дистанцую которую могут проанимровать вьюшки
      */
     private fun moveObjectToNewPosition(x: Float, y: Float, selectedBtn: FloatingActionButton, maxDistance: Float) {
-        var objectForNewAnim: View? = null                    //тут будет храниться вью которая будет анимироваться(если будет при пересечении)
+        var objectForNewAnim: FootballObject? = null                    //тут будет храниться вью которая будет анимироваться(если будет при пересечении)
         val dataListNewMoving = mutableListOf<Float>()        //тут будут храниться центры x и y для объектов которые ударяются
         var cordX: Float? = null
         var cordY: Float? = null
@@ -88,7 +120,6 @@ class MainActivity : AppCompatActivity() {
                     && abs(valueX) < xLenght && abs(valueY) < yLenght
                     && maxDistance > sqrt(valueX.pow(2) + valueY.pow(2))
                 ) {
-
                     valueX += p.first
                     valueY += p.second
 
@@ -103,13 +134,13 @@ class MainActivity : AppCompatActivity() {
 
                 //если остановилось из-за припятствия
                 if (abs(valueX) <= xLenght && abs(valueY) <= yLenght && maxDistance > sqrt(valueX.pow(2) + valueY.pow(2))) {
-                    objectForNewAnim = i.view
+                    objectForNewAnim = i
 
                     //в dataListNewMoving записываем нужные данные для перехода к методу  ricochet
-                    dataListNewMoving.add(iCordX + objectForNewAnim.width / 2)
-                    dataListNewMoving.add(iCordY + objectForNewAnim.height / 2)
-                    dataListNewMoving.add(objectForNewAnim.x + objectForNewAnim.width / 2)
-                    dataListNewMoving.add(objectForNewAnim.y + objectForNewAnim.height / 2)
+                    dataListNewMoving.add(iCordX + objectForNewAnim.view.width / 2)
+                    dataListNewMoving.add(iCordY + objectForNewAnim.view.height / 2)
+                    dataListNewMoving.add(objectForNewAnim.view.x + objectForNewAnim.view.width / 2)
+                    dataListNewMoving.add(objectForNewAnim.view.y + objectForNewAnim.view.height / 2)
                     dataListNewMoving.add(sqrt(valueX.pow(2) + valueY.pow(2)))
                 }
 
@@ -134,13 +165,20 @@ class MainActivity : AppCompatActivity() {
             this.addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) = Unit
                 override fun onAnimationEnd(p0: Animator?) {
-                    objectForNewAnim?.let {
-                        selected = it as FloatingActionButton
+                    if (objectForNewAnim != null && objectForNewAnim.typeOfObject != 0) {
                         ricochet(
                             maxDistance - dataListNewMoving[4],
                             Pair(dataListNewMoving[0], dataListNewMoving[1]),
-                            Pair(dataListNewMoving[2], dataListNewMoving[3])
+                            Pair(
+                                dataListNewMoving[2], dataListNewMoving[3]
+                            ),
+                            objectForNewAnim.view,
+                            if (objectForNewAnim.typeOfObject == 0)
                         )
+                    } else {
+                        selected?.let { changeStateOfButton(it) }
+                        //selected = null
+                        teamMove = if (teamMove == 1) 2 else 1
                     }
                 }
 
@@ -158,15 +196,27 @@ class MainActivity : AppCompatActivity() {
      * firstObj - координаты центра первого объекта(который ударяет)
      * secondObj - координаты центра второго объекта (по которому ударяют)
      */
-    private fun ricochet(remainsMaxDistance: Float, firstObj: Pair<Float, Float>, secondObj: Pair<Float, Float>) {
+    private fun ricochet(
+        remainsMaxDistance: Float,
+        firstObj: Pair<Float, Float>,
+        secondObj: Pair<Float, Float>,
+        newObject: FloatingActionButton,
+        isBall: Boolean = false
+    ) {
         //получаем длинну по каждой координате
         val length = Pair(secondObj.first - firstObj.first, secondObj.second - firstObj.second)
         val sign = Pair(if (length.first > 0) 1f else -1f, if (length.second > 0) 1f else -1f)
 
         //получаем шаги
-        val steps = if (length.first > length.second)
-            Pair(sign.first * abs(length.first / length.second), sign.second)
-        else Pair(sign.first, sign.second * abs(length.second / length.first))
+        val steps = if (isBall) {
+            if (length.first > length.second)
+                Pair(-(sign.first * abs(length.first / length.second)), -sign.second)
+            else Pair(-sign.first, -(sign.second * abs(length.second / length.first)))
+        } else {
+            if (length.first > length.second)
+                Pair(sign.first * abs(length.first / length.second), sign.second)
+            else Pair(sign.first, sign.second * abs(length.second / length.first))
+        }
 
         //суммарная дистанция пройденая
         var sumDistanceX = 0f
@@ -191,18 +241,7 @@ class MainActivity : AppCompatActivity() {
             if (newX < 0 || newY < 0 || newY + (selected?.height ?: 1) > height || newX + (selected?.width ?: 1) > width)
                 break@loop
         }
-
-       // val sumDistance = getHypotenuse(sumDistanceX, sumDistanceY)
-
-        selected?.let { moveObjectToNewPosition(newX, newY, it, remainsMaxDistance ) }
-
-    /*    AnimatorSet().apply {
-            playTogether(
-                ObjectAnimator.ofFloat(selected, "x", newX).setDuration(500),
-                ObjectAnimator.ofFloat(selected, "y", newY).setDuration(500)
-            )
-            start()
-        }*/
+        moveObjectToNewPosition(newX, newY, newObject, remainsMaxDistance)
     }
 
     private fun startAnimationNewObject(objectShouldMove: FloatingActionButton, intersectionX: Float, intersectionY: Float, maxDistance: Float) {
@@ -244,10 +283,9 @@ class MainActivity : AppCompatActivity() {
         listOfPlayers.add(FootballObject(binding.fab1, 1))
         listOfPlayers.add(FootballObject(binding.fab2, 1))
         listOfPlayers.add(FootballObject(binding.fab3, 1))
+        listOfPlayers.add(FootballObject(binding.fab4, 0))
+        listOfPlayers.add(FootballObject(binding.fab5, 2))
+        listOfPlayers.add(FootballObject(binding.fab6, 2))
+        listOfPlayers.add(FootballObject(binding.fab7, 2))
     }
 }
-
-data class FootballObject(
-    var view: FloatingActionButton,
-    var typeOfObject: Int
-)
