@@ -64,4 +64,26 @@
         android:layout_height="match_parent"
         app:backgroundTint="@color/white" />
 
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <View
+            android:id="@+id/blue"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:background="@android:color/black"
+            android:layout_marginHorizontal="100dp"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <View
+            android:id="@+id/red"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:background="@android:color/black"
+            android:layout_marginHorizontal="100dp"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
 </FrameLayout>
