@@ -165,7 +165,7 @@ class MainActivity : AppCompatActivity() {
             this.addListener(object : Animator.AnimatorListener {
                 override fun onAnimationStart(p0: Animator?) = Unit
                 override fun onAnimationEnd(p0: Animator?) {
-                    if (objectForNewAnim != null && objectForNewAnim.typeOfObject != 0) {
+                    if (objectForNewAnim != null && selectedBtn.id != listOfPlayers[3].view.id) {
                         ricochet(
                             maxDistance - dataListNewMoving[4],
                             Pair(dataListNewMoving[0], dataListNewMoving[1]),
@@ -173,11 +173,19 @@ class MainActivity : AppCompatActivity() {
                                 dataListNewMoving[2], dataListNewMoving[3]
                             ),
                             objectForNewAnim.view,
-                            if (objectForNewAnim.typeOfObject == 0)
+                        )
+                    } else if (selectedBtn.id == listOfPlayers[3].view.id && dataListNewMoving.size != 0) {
+                        ricochet(
+                            maxDistance - dataListNewMoving[4],
+                            Pair(dataListNewMoving[0], dataListNewMoving[1]),
+                            Pair(
+                                dataListNewMoving[2], dataListNewMoving[3]
+                            ),
+                            selectedBtn,
+                            true
                         )
                     } else {
                         selected?.let { changeStateOfButton(it) }
-                        //selected = null
                         teamMove = if (teamMove == 1) 2 else 1
                     }
                 }
@@ -223,8 +231,8 @@ class MainActivity : AppCompatActivity() {
         var sumDistanceY = 0f
 
         //итоговые координаты
-        var newX = secondObj.first
-        var newY = secondObj.second
+        var newX = if (!isBall) secondObj.first else firstObj.first
+        var newY = if (!isBall) secondObj.second else firstObj.second
 
         val displayMetrics = DisplayMetrics()
         windowManager.defaultDisplay.getMetrics(displayMetrics)

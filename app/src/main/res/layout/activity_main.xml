@@ -15,7 +15,7 @@
         android:id="@+id/fab2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
+        android:layout_gravity="bottom"
         app:srcCompat="@android:drawable/ic_dialog_email" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -29,9 +29,8 @@
         android:id="@+id/fab4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:fabSize="mini"
         app:backgroundTint="@color/black"
-        android:layout_gravity="bottom" />
+        android:layout_gravity="center" />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab5"
